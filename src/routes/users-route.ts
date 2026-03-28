@@ -1,5 +1,10 @@
 import { Elysia, t } from 'elysia';
-import { registerUser, loginUser, getCurrentUser, logoutUser } from '../services/users-services';
+import {
+  registerUser,
+  loginUser,
+  getCurrentUser,
+  logoutUser,
+} from '../services/users-services';
 
 export const usersRoute = new Elysia({ prefix: '/api/users' })
   .post(
@@ -48,20 +53,26 @@ export const usersRoute = new Elysia({ prefix: '/api/users' })
       }),
     }
   )
-  .get('/login', async ({ headers, set }) => {
+  .derive(({ headers }) => {
+    const authorization = headers['authorization'];
+    if (
+      !authorization ||
+      typeof authorization !== 'string' ||
+      !authorization.startsWith('Bearer ')
+    ) {
+      return { token: null };
+    }
+
+    const token = authorization.split(' ')[1];
+    return { token: token || null };
+  })
+  .get('/login', async ({ token, set }) => {
+    if (!token) {
+      set.status = 401;
+      return { error: 'Unauthorized' };
+    }
+
     try {
-      const authorization = headers['authorization'];
-      if (!authorization || typeof authorization !== 'string' || !authorization.startsWith('Bearer ')) {
-        set.status = 401;
-        return { error: 'Unauthorized' };
-      }
-
-      const token = authorization.split(' ')[1];
-      if (!token) {
-        set.status = 401;
-        return { error: 'Unauthorized' };
-      }
-
       const user = await getCurrentUser(token);
       return { data: user };
     } catch (error: any) {
@@ -73,20 +84,13 @@ export const usersRoute = new Elysia({ prefix: '/api/users' })
       return { error: 'Internal Server Error' };
     }
   })
-  .delete('/logout', async ({ headers, set }) => {
+  .delete('/logout', async ({ token, set }) => {
+    if (!token) {
+      set.status = 401;
+      return { error: 'Unauthorized' };
+    }
+
     try {
-      const authorization = headers['authorization'];
-      if (!authorization || typeof authorization !== 'string' || !authorization.startsWith('Bearer ')) {
-        set.status = 401;
-        return { error: 'Unauthorized' };
-      }
-
-      const token = authorization.split(' ')[1];
-      if (!token) {
-        set.status = 401;
-        return { error: 'Unauthorized' };
-      }
-
       await logoutUser(token);
       return { data: 'OK' };
     } catch (error: any) {

@@ -28,6 +28,15 @@ export const usersRoute = new Elysia({ prefix: '/api/users' })
         email: t.String({ maxLength: 255 }),
         password: t.String({ maxLength: 255 }),
       }),
+      detail: {
+        summary: 'Register User',
+        tags: ['Users'],
+      },
+      response: {
+        200: t.Object({ data: t.String() }, { description: 'Registrasi Berhasil' }),
+        400: t.Object({ error: t.String() }, { description: 'Email Sudah Terdaftar' }),
+        500: t.Object({ error: t.String() }, { description: 'Internal Server Error' }),
+      },
     }
   )
   .post(
@@ -51,6 +60,15 @@ export const usersRoute = new Elysia({ prefix: '/api/users' })
         email: t.String({ maxLength: 255 }),
         password: t.String({ maxLength: 255 }),
       }),
+      detail: {
+        summary: 'Login User',
+        tags: ['Users'],
+      },
+      response: {
+        200: t.Object({ data: t.String() }, { description: 'Login Berhasil, Return Token' }),
+        400: t.Object({ error: t.String() }, { description: 'Email atau Password Salah' }),
+        500: t.Object({ error: t.String() }, { description: 'Internal Server Error' }),
+      },
     }
   )
   .derive(({ headers }) => {
@@ -66,39 +84,76 @@ export const usersRoute = new Elysia({ prefix: '/api/users' })
     const token = authorization.split(' ')[1];
     return { token: token || null };
   })
-  .get('/login', async ({ token, set }) => {
-    if (!token) {
-      set.status = 401;
-      return { error: 'Unauthorized' };
-    }
-
-    try {
-      const user = await getCurrentUser(token);
-      return { data: user };
-    } catch (error: any) {
-      if (error.message === 'Unauthorized') {
+  .get(
+    '/login',
+    async ({ token, set }) => {
+      if (!token) {
         set.status = 401;
-        return { error: error.message };
+        return { error: 'Unauthorized' };
       }
-      set.status = 500;
-      return { error: 'Internal Server Error' };
-    }
-  })
-  .delete('/logout', async ({ token, set }) => {
-    if (!token) {
-      set.status = 401;
-      return { error: 'Unauthorized' };
-    }
 
-    try {
-      await logoutUser(token);
-      return { data: 'OK' };
-    } catch (error: any) {
-      if (error.message === 'Unauthorized') {
-        set.status = 401;
-        return { error: error.message };
+      try {
+        const user = await getCurrentUser(token);
+        return { data: user };
+      } catch (error: any) {
+        if (error.message === 'Unauthorized') {
+          set.status = 401;
+          return { error: error.message };
+        }
+        set.status = 500;
+        return { error: 'Internal Server Error' };
       }
-      set.status = 500;
-      return { error: 'Internal Server Error' };
+    },
+    {
+      detail: {
+        summary: 'Get Current User Profile',
+        tags: ['Users'],
+        security: [{ bearerAuth: [] }],
+      },
+      response: {
+        200: t.Object({
+          data: t.Object({
+            id: t.Number(),
+            name: t.String(),
+            email: t.String(),
+            createdAt: t.Date(),
+          }),
+        }, { description: 'Data Profil Berhasil Diambil' }),
+        401: t.Object({ error: t.String() }, { description: 'Unauthorized' }),
+        500: t.Object({ error: t.String() }, { description: 'Internal Server Error' }),
+      },
     }
-  });
+  )
+  .delete(
+    '/logout',
+    async ({ token, set }) => {
+      if (!token) {
+        set.status = 401;
+        return { error: 'Unauthorized' };
+      }
+
+      try {
+        await logoutUser(token);
+        return { data: 'OK' };
+      } catch (error: any) {
+        if (error.message === 'Unauthorized') {
+          set.status = 401;
+          return { error: error.message };
+        }
+        set.status = 500;
+        return { error: 'Internal Server Error' };
+      }
+    },
+    {
+      detail: {
+        summary: 'Logout User',
+        tags: ['Users'],
+        security: [{ bearerAuth: [] }],
+      },
+      response: {
+        200: t.Object({ data: t.String() }, { description: 'Logout Berhasil' }),
+        401: t.Object({ error: t.String() }, { description: 'Unauthorized' }),
+        500: t.Object({ error: t.String() }, { description: 'Internal Server Error' }),
+      },
+    }
+  );

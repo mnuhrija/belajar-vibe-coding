@@ -32,6 +32,11 @@ export const usersRoute = new Elysia({ prefix: '/api/users' })
         summary: 'Register User',
         tags: ['Users'],
       },
+      response: {
+        200: t.Object({ data: t.String() }, { description: 'Registrasi Berhasil' }),
+        400: t.Object({ error: t.String() }, { description: 'Email Sudah Terdaftar' }),
+        500: t.Object({ error: t.String() }, { description: 'Internal Server Error' }),
+      },
     }
   )
   .post(
@@ -58,6 +63,11 @@ export const usersRoute = new Elysia({ prefix: '/api/users' })
       detail: {
         summary: 'Login User',
         tags: ['Users'],
+      },
+      response: {
+        200: t.Object({ data: t.String() }, { description: 'Login Berhasil, Return Token' }),
+        400: t.Object({ error: t.String() }, { description: 'Email atau Password Salah' }),
+        500: t.Object({ error: t.String() }, { description: 'Internal Server Error' }),
       },
     }
   )
@@ -100,6 +110,18 @@ export const usersRoute = new Elysia({ prefix: '/api/users' })
         tags: ['Users'],
         security: [{ bearerAuth: [] }],
       },
+      response: {
+        200: t.Object({
+          data: t.Object({
+            id: t.Number(),
+            name: t.String(),
+            email: t.String(),
+            createdAt: t.Date(),
+          }),
+        }, { description: 'Data Profil Berhasil Diambil' }),
+        401: t.Object({ error: t.String() }, { description: 'Unauthorized' }),
+        500: t.Object({ error: t.String() }, { description: 'Internal Server Error' }),
+      },
     }
   )
   .delete(
@@ -127,6 +149,11 @@ export const usersRoute = new Elysia({ prefix: '/api/users' })
         summary: 'Logout User',
         tags: ['Users'],
         security: [{ bearerAuth: [] }],
+      },
+      response: {
+        200: t.Object({ data: t.String() }, { description: 'Logout Berhasil' }),
+        401: t.Object({ error: t.String() }, { description: 'Unauthorized' }),
+        500: t.Object({ error: t.String() }, { description: 'Internal Server Error' }),
       },
     }
   );
